@@ -4,12 +4,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User } from '../schemas/user.schema';
 import { Model } from 'mongoose';
 import { compare, hash } from 'bcrypt';
+import { Wallet } from '../schemas/wallet.schema';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwt: JwtService,
     @InjectModel('user', 'auth') private userModel: Model<User>,
+    @InjectModel('wallet', 'client') private walletModel: Model<Wallet>,
   ) {}
 
   public async signIn(data: any) {
@@ -21,11 +23,17 @@ export class AuthService {
         email,
         password: hashPassword,
       });
+
+      const newWallet = await this.walletModel.create({
+        user: newUser.id,
+        coins: 1000,
+      });
+      newUser.wallet = newWallet.id;
+      await newWallet.save();
       const saveUser = await newUser.save();
       return await this.generateToken({
         email: saveUser.email,
-        admin: saveUser.isAdmin,
-        isNewUser: saveUser.isNewUser,
+        role: saveUser.role,
         name: saveUser.name,
         id: saveUser.id,
       });
@@ -33,10 +41,9 @@ export class AuthService {
     if (await compare(password, existUser.password)) {
       const payload = {
         email: existUser.email,
-        isAdmin: existUser.isAdmin,
+        role: existUser.role,
         name: existUser.name,
         id: existUser.id,
-        isNewUser: existUser.isNewUser,
       };
       return await this.generateToken(payload);
     } else {

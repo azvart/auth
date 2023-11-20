@@ -1,9 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 
-@Schema()
+@Schema({ timestamps: true })
 export class User {
   @Prop({ default: 'New User' })
   public name: string;
@@ -14,11 +14,11 @@ export class User {
   @Prop({ required: true })
   public password: string;
 
-  @Prop({ default: false })
-  public isAdmin: boolean;
+  @Prop({ default: 'user' })
+  public role: string;
 
-  @Prop({ default: false })
-  public isNewUser: boolean;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'wallet' })
+  public wallet: Types.ObjectId;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
